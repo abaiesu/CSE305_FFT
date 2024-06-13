@@ -8,7 +8,7 @@ CXXFLAGS = -Wall -Wextra -std=c++11
 INCLUDES = -I eigen
 
 # Source files
-SRCS = CS.cpp helpers.cpp fft.cpp perf_test.cpp demo.cpp
+SRCS = CS.cpp helpers.cpp dft.cpp perf_test.cpp 
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

@@ -167,7 +167,9 @@ void test_omp(){
 
 
 
-//int main() {
+int main() {
+
+    return 1;
     
     //test_perf_2D();
 
@@ -250,4 +252,4 @@ void test_omp(){
     
 
     //return 0;
-//}
+}
