@@ -1,9 +1,9 @@
 #include "helpers.h"
 
 // Generate synthetic periodic weather data (sine wave with noise)
-CArray gen_data(int n) {
+CArray gen_data(ull n) {
     CArray data(n);
-    for (int i = 0; i < n; ++i) {
+    for (ull i = 0; i < n; ++i) {
         double t = (2 * PI * i) / n;
         data[i] = 20 + 10 * sin(t) + 5 * sin(2 * t) + 2 * ((rand() % 100) / 100.0 - 0.5); // Simulated temperature data
     }
@@ -30,7 +30,7 @@ void save2txt(CArray array, std::string filename) {
 }
 
 
-bool areArraysEqual(const CArray& a, const CArray& b) {
+bool are_arrays_equal(const CArray& a, const CArray& b) {
     
     double tolerance = 1e-4;
     
@@ -39,13 +39,14 @@ bool areArraysEqual(const CArray& a, const CArray& b) {
         return false;
     }
 
+    bool flag = true;
     for (size_t i = 0; i < a.size(); ++i) {
         //printf("a[%zu] = (%f, %f), b[%zu] = (%f, %f)\n", i, a[i].real(), a[i].imag(), i, b[i].real(), b[i].imag());
         if (std::abs(a[i] - b[i]) > tolerance) {
             return false;
         }
     }
-    return true;
+    return flag;
 }
 
 
@@ -92,3 +93,132 @@ CArray readCSVFile(const std::string& filename) {
     return y;
 
 }
+
+bool compareRealPart(const std::complex<double>& a, const std::complex<double>& b) {
+    return a.real() > b.real(); // sort in descending order of real part
+}
+
+
+CArray sparsify_data(CArray& y, int num_components) {
+    
+    int n = y.size();
+    CArray y_sparse = y;
+    CArray y_sorted = y;
+
+    std::sort(y_sorted.begin(), y_sorted.end(), compareRealPart);
+
+    Complex threash = y_sorted[num_components - 1];
+
+    for (int i = 0; i < n; ++i) {
+        if (std::abs(y_sparse[i]) < std::abs(threash.real())) {
+            y_sparse[i] = 0;
+        }
+    }
+
+    return y_sparse;
+}
+
+bool isPowerOfTwo(int N) {
+    return (N > 0) && ((N & (N - 1)) == 0);
+}
+
+
+void readJPEG(const char* filename, TwoDCArray image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
+    
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        exit(1);
+    }
+
+    for (int y = 0; y < IMAGE_HEIGHT; y++) {
+        for (int x = 0; x < IMAGE_WIDTH; x++) {
+            int pixelValue = fgetc(file);
+            image[y][x] = (pixelValue > 127) ? 255 : 0;
+        }
+    }
+
+    fclose(file);
+}
+
+
+
+void writeJPEG(const char* filename, const TwoDCArray& image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
+    
+    FILE* file = fopen(filename, "wb");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    // Write JPEG header
+    fprintf(file, "P6\n");
+    fprintf(file, "%zu %zu\n", IMAGE_WIDTH, IMAGE_HEIGHT);
+    fprintf(file, "255\n");
+
+    // Write pixel values
+    for (size_t y = 0; y < IMAGE_HEIGHT; y++) {
+        for (size_t x = 0; x < IMAGE_WIDTH; x++) {
+            // For simplicity, let's just use the real part of the complex number
+            int pixelValue = static_cast<int>(image[y][x].real());
+
+            // Ensure the pixel value is within [0, 255]
+            pixelValue = max(0, min(255, pixelValue));
+
+            // Write the pixel value as RGB (assuming grayscale)
+            fputc(pixelValue, file); // Red
+            fputc(pixelValue, file); // Green
+            fputc(pixelValue, file); // Blue
+        }
+    }
+
+    fclose(file);
+}
+
+
+
+
+double random_real(double min, double max) {
+    return min + static_cast<double>(std::rand()) / RAND_MAX * (max - min);
+}
+
+
+TwoDCArray generate_random_2d_array(int N, int M, double min_value, double max_value) {
+    
+    TwoDCArray array(N, CArray(M));
+    // Seed the random number generator
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    // Fill the array with random real numbers
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < M; ++j) {
+            array[i][j] = random_real(min_value, max_value);
+        }
+    }
+
+    return array;
+}
+
+
+bool are_matrices_equal(TwoDCArray arr1, TwoDCArray arr2){
+
+    // Check if dimensions are the same
+    if (arr1.size() != arr2.size() || arr1[0].size() != arr2[0].size()) {
+        return false;
+    }
+
+    // Check if each corresponding element is equal
+    for (size_t i = 0; i < arr1.size(); ++i) {
+        for (size_t j = 0; j < arr1[i].size(); ++j) {
+            if (std::abs(arr1[i][j] - arr2[i][j]) > 1e-6) {
+                return false;
+            }
+        }
+    }
+
+    // If all elements are equal, return true
+    return true;
+}
+
+
+
