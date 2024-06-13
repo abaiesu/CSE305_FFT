@@ -18,7 +18,7 @@ CArray test_1D_fft_num_threads(int M, int p, bool print){
         int num_threads = 1;
 
         //give the same data to both algorithms
-        CArray data = gen_data(N);
+        CArray data = gen_temp(N);
 
         // Timing sequential FFT
         auto start = std::chrono::high_resolution_clock::now();
@@ -90,7 +90,7 @@ void test_matrix_mul() {
     TwoDCArray A = generate_normal_matrix(M, N);
 
     // Input vector x
-    CArray x = gen_data(N);
+    CArray x = gen_temp(N);
 
 
     // Measure time for serial multiplication
@@ -132,7 +132,7 @@ void test_omp(){
     TwoDCArray A = generate_normal_matrix(M, N);
     CArray y_ser(M);
     CArray y_par(M);
-    CArray x = gen_data(N);       
+    CArray x = gen_temp(N);       
     x = sparsify_data(x, K);
     
 

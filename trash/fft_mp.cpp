@@ -330,7 +330,7 @@ int main() {
     int p = 10;
     int N = pow(M, p); // Example size of the data
     printf("N : %d\n", N);
-    CArray original_data = gen_data(N);
+    CArray original_data = gen_temp(N);
     CArray original_data_copy = original_data;
     //CArray original_data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};//gen_data(N);
     //CArray original_data_copy = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};

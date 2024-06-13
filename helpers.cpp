@@ -1,13 +1,25 @@
 #include "helpers.h"
 
-// Generate synthetic periodic weather data (sine wave with noise)
-CArray gen_data(ull n) {
+CArray gen_temp(ull n) {
     CArray data(n);
     for (ull i = 0; i < n; ++i) {
         double t = (2 * PI * i) / n;
-        data[i] = 20 + 10 * sin(t) + 5 * sin(2 * t) + 2 * ((rand() % 100) / 100.0 - 0.5); // Simulated temperature data
+        data[i] = 20 + 10 * sin(t) + 5 * sin(2 * t) + 2 * ((rand() % 100) / 100.0 - 0.5); 
     }
     return data;
+}
+
+CArray gen_wave(ull n) {
+    
+    CArray signal(n);
+    double pi = 3.14159265358979323846;
+    
+    for (int i = 0; i < n; ++i) {
+        double t = static_cast<double>(i) / (n - 1);
+        signal[i] = std::cos(2 * 97 * pi * t) + std::cos(2 * 777 * pi * t);
+    }
+    
+    return signal;
 }
 
 

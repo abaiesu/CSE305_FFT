@@ -24,7 +24,7 @@ typedef vector<CArray> TwoDCArray;
 const double PI = acos(-1);
 
 
-CArray gen_data(ull n);
+CArray gen_temp(ull n);
 
 void save2txt(CArray array, std::string filename);
 

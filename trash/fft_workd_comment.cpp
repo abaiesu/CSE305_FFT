@@ -381,7 +381,7 @@ int main() {
     //CArray sequ = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};//gen_data(N);
     //CArray par = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 
-    CArray sequ = gen_data(N);
+    CArray sequ = gen_temp(N);
     CArray par = sequ;
 
 
