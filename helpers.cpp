@@ -9,9 +9,9 @@ CArray gen_temp(ull n) {
     return data;
 }
 
-CArray gen_wave(ull n) {
+std::vector<double> gen_wave(ull n) {
     
-    CArray signal(n);
+    std::vector<double> signal(n);
     double pi = 3.14159265358979323846;
     
     for (int i = 0; i < n; ++i) {
@@ -130,12 +130,12 @@ CArray sparsify_data(CArray& y, int num_components) {
     return y_sparse;
 }
 
-bool isPowerOfTwo(int N) {
+bool is_power2(int N) {
     return (N > 0) && ((N & (N - 1)) == 0);
 }
 
 
-void readJPEG(const char* filename, TwoDCArray image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
+void read_JPEG(const char* filename, TwoDCArray image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
     
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
@@ -155,7 +155,7 @@ void readJPEG(const char* filename, TwoDCArray image, size_t IMAGE_HEIGHT, size_
 
 
 
-void writeJPEG(const char* filename, const TwoDCArray& image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
+void write_JPEG(const char* filename, const TwoDCArray& image, size_t IMAGE_HEIGHT, size_t IMAGE_WIDTH) {
     
     FILE* file = fopen(filename, "wb");
     if (file == NULL) {

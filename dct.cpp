@@ -9,9 +9,9 @@ using CArray = std::vector<std::complex<double>>;
 using IArray = std::vector<int>;
 
 // Naive DCT-II implementation
-std::vector<double> naiveDCT(const std::vector<double>& input) {
+DArray naiveDCT(const DArray& input) {
     int N = input.size();
-    std::vector<double> output(N);
+    DArray output(N);
 
     // Compute the DCT-II using the naive approach
     for (int k = 0; k < N; ++k) {
@@ -32,9 +32,9 @@ std::vector<double> naiveDCT(const std::vector<double>& input) {
 }
 
 // Naive IDCT-II implementation
-std::vector<double> naiveIDCT(const std::vector<double>& input) {
+DArray naiveIDCT(const DArray& input) {
     int N = input.size();
-    std::vector<double> output(N);
+    DArray output(N);
 
     // Compute the IDCT-II using the naive approach
     for (int n = 0; n < N; ++n) {
@@ -49,9 +49,9 @@ std::vector<double> naiveIDCT(const std::vector<double>& input) {
 }
 
 // Fast DCT-II implementation
-std::vector<double> dctFast(const std::vector<double>& input) {
+DArray dctFast(const DArray& input) {
     int N = input.size();
-    std::vector<double> v(N, 0.0);
+    DArray v(N, 0.0);
 
     // Prepare the input for FFT
     for (int i = 0; i <= (N - 1) / 2; ++i) {
@@ -95,9 +95,9 @@ std::vector<double> dctFast(const std::vector<double>& input) {
 }
 
 // Fast IDCT-II implementation
-std::vector<double> idctFast(const std::vector<double>& dctInput) {
+DArray idctFast(const DArray& dctInput) {
     int N = dctInput.size();
-    std::vector<std::complex<double>> shiftGrid(N);
+    CArray shiftGrid(N);
 
     // Prepare the shift grid for IFFT
     for (int i = 0; i < N; ++i) {
@@ -117,7 +117,7 @@ std::vector<double> idctFast(const std::vector<double>& dctInput) {
     idft(vTmpComplex, dimensions, num_threads);
 
     // Reconstruct the original signal
-    std::vector<double> x(N);
+    DArray x(N);
     for (int i = 0; i < N / 2; ++i) {
         x[2 * i] = vTmpComplex[i].real();
         x[2 * i + 1] = vTmpComplex[N - i - 1].real();
@@ -137,37 +137,38 @@ CArray vectorToCArray(const std::vector<double>& vec) {
 
 int main() {
     // Input data
-    std::vector<double> input = {1.0, 2.0, 3.0, 4.0};
+    int N = pow(2, 12);
+    DArray input = gen_wave(N);
 
     // Perform naive DCT and IDCT
-    std::vector<double> dctNaiveOutput = naiveDCT(input);
-    std::cout << "Naive DCT output:\n";
+    DArray dctNaiveOutput = naiveDCT(input);
+    /*std::cout << "Naive DCT output:\n";
     for (double val : dctNaiveOutput) {
         std::cout << val << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
-    std::vector<double> idctNaiveOutput = naiveIDCT(dctNaiveOutput);
-    std::cout << "Naive IDCT output:\n";
+    DArray idctNaiveOutput = naiveIDCT(dctNaiveOutput);
+    /*std::cout << "Naive IDCT output:\n";
     for (double val : idctNaiveOutput) {
         std::cout << val << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     // Perform fast DCT and IDCT
-    std::vector<double> dctFastOutput = dctFast(input);
-    std::cout << "Fast DCT output:\n";
+    DArray dctFastOutput = dctFast(input);
+    /*std::cout << "Fast DCT output:\n";
     for (double val : dctFastOutput) {
         std::cout << val << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
-    std::vector<double> idctFastOutput = idctFast(dctFastOutput);
-    std::cout << "Fast IDCT output:\n";
+    DArray idctFastOutput = idctFast(dctFastOutput);
+    /*std::cout << "Fast IDCT output:\n";
     for (double val : idctFastOutput) {
         std::cout << val << " ";
     }
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     // Convert vectors to CArray for comparison
     CArray inputCArray = vectorToCArray(input);

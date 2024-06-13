@@ -7,7 +7,7 @@ void serial_dft(CArray& y) {
     
     int n = y.size();
 
-    if (isPowerOfTwo(n) == false){
+    if (is_power2(n) == false){
         std::cerr << "The size of the input isn't a power of 2" << std::endl;
         return;
     }
