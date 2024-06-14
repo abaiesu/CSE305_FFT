@@ -31,8 +31,23 @@ $(perf_test): $(OBJS_perf_test)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+
+NVCC = /usr/local/cuda/bin/nvcc
+
+dct_gpu:
+	$(NVCC) dct_gpu.cu -o dct_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
+
+dft_gpu:
+	$(NVCC) dft_gpu.cu helpers.cpp -o dft_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
+
+matmul_gpu:
+	$(NVCC) matmul_gpu.cu helpers.cpp -o matmul_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
+
 # Clean rule
 clean:
 	rm -f $(OBJS_CS_demo) $(OBJS_perf_test) $(CS_demo) $(perf_test)
+	rm -f dct_gpu
+	rm -f dft_gpu
+	rm -f matmul_gpu
 
 all: $(CS_demo) $(perf_test)

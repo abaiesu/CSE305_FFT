@@ -1,6 +1,7 @@
 #include "dft.h"
 #include "CS.h"
 #include "helpers.h"
+#include "dct.h"
 
 CArray test_1D_fft_num_threads(int M, int p, bool print){
 
@@ -44,6 +45,46 @@ CArray test_1D_fft_num_threads(int M, int p, bool print){
 }
 
 
+void test_fft_speed(int M, int p, bool print){
+
+    ull N = pow(M, p); 
+
+    if(print){
+        printf("N = %llu\n", N);
+    }
+
+    IArray dimensions (p, M);
+
+    CArray x = gen_temp(N);
+
+    int num_threads = 20;
+
+    // Timing sequential FFT
+    auto start = std::chrono::high_resolution_clock::now();
+    serial_dft(x);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
+    if (print){
+        printf("SERIAL : %f sec\n", elapsed.count());
+    }
+    
+    // Timing sequential FFT
+    start = std::chrono::high_resolution_clock::now();
+    parallel_dft(x, dimensions, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    if (print){
+        printf("PARALLEL : %f sec\n", elapsed.count());
+    }
+
+    printf("\n");
+
+       
+}
+
+
 void test_perf_2D_fft(){
 
     for(int p = 5; p <= 10; p++){
@@ -53,7 +94,6 @@ void test_perf_2D_fft(){
         int num_threads = 20;
         TwoDCArray matrix_ser = generate_random_2d_array(N, N, 0, 100);
         TwoDCArray matrix_par = generate_random_2d_array(N, N, 0, 100);
-
 
 
         // Timing sequential FFT
@@ -81,10 +121,8 @@ void test_perf_2D_fft(){
 }
 
 
-void test_matrix_mul() {
+void test_matrix_mul(int M, int N) {
     
-    int M = 300; 
-    int N = 1000; 
     int num_threads = 20;
 
     // random Gaussian matrix A
@@ -127,9 +165,10 @@ void test_omp(){
     
     int num_threads = 20;
 
-    int N = 2000;
-    int M = 600;
-    int K = 100;
+    int N = pow(2, 10);
+    int M = N/10;
+    printf(" N = %d, m = %d\n", N, M);
+    int K = int(N*0.05);;
     TwoDDArray A = generate_normal_matrix(M, N);
     DArray y_ser(M);
     DArray y_par(M);
@@ -150,12 +189,12 @@ void test_omp(){
     std::chrono::duration<double> duration_parallel = stop_parallel - start_parallel;
 
     // Print the times
-    cout << "Serial OMP time: " << duration_serial.count() << " seconds\n";
-    cout << "Parallel OMP time: " << duration_parallel.count() << " seconds\n";
+    std::cout << "Serial OMP time: " << duration_serial.count() << " seconds\n";
+    std::cout << "Parallel OMP time: " << duration_parallel.count() << " seconds\n";
 
     // Print the ratio
     double ratio = static_cast<double>(duration_serial.count()) / duration_parallel.count();
-    cout << "Ratio (Serial Time / Parallel Time): " << ratio << endl;
+    std::cout << "Ratio (Serial Time / Parallel Time): " << ratio << endl;
 
     if (are_arrays_equal<DArray>(y_par, y_ser)) {
         std::cout << "Correct output :)" << std::endl;
@@ -167,8 +206,75 @@ void test_omp(){
 
 
 
+
+void test_dct() {
+
+    int num_threads = 20;
+
+    // Input data
+    ull N = pow(2, 15);
+    printf("N = %d\n", N);
+    int M = 8;
+    int p = 5;
+    IArray dimensions (p, M);
+    DArray input = gen_wave(N);
+
+    // Measure running times
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<double> out1 = serial_dct(input);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationNaiveIDCT = end - start;
+    std::cout << "Serial DCT time: " << durationNaiveIDCT.count() << " seconds\n";
+
+    start = std::chrono::high_resolution_clock::now();
+    DArray out2 = parallel_dct(input, dimensions, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationFastDCT = end - start;
+    std::cout << "Parallel DCT time: " << durationFastDCT.count() << " seconds\n";
+
+    
+    std::cout << "Ratio: " << durationNaiveIDCT.count()/durationFastDCT.count() << " \n";
+
+}
+    //bool are_equal = are_arrays_equal(dctFastOutput, dctParallelOutput);
+
+    //std::cout << "Correct ? " << (are_equal ? "Yes" : "No") << std::endl;
+
+    /*start = std::chrono::high_resolution_clock::now();
+    std::vector<double> idctParallelOutput = idctParallel(dctParallelOutput, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationParallelIDCT = end - start;
+    std::cout << "Parallelized Fast IDCT time: " << durationParallelIDCT.count() << " seconds\n";*/
+
+    // Convert vectors to CArray for comparison
+    /*CArray inputCArray = vectorToCArray(input);
+    CArray idctNaiveCArray = vectorToCArray(idctNaiveOutput);
+    CArray idctFastCArray = vectorToCArray(idctFastOutput);
+    CArray idctParallelCArray = vectorToCArray(idctParallelOutput);
+
+    // Compare results with original input
+    bool are_equal_naive = are_arrays_equal(inputCArray, idctNaiveCArray);
+    bool are_equal_fast = are_arrays_equal(inputCArray, idctFastCArray);
+    bool are_equal_parallel = are_arrays_equal(inputCArray, idctParallelCArray);
+
+    std::cout << "Naive IDCT result matches original input: " << (are_equal_naive ? "Yes" : "No") << std::endl;
+    std::cout << "Fast IDCT result matches original input: " << (are_equal_fast ? "Yes" : "No") << std::endl;
+    std::cout << "Parallel IDCT result matches original input: " << (are_equal_parallel ? "Yes" : "No") << std::endl;
+
+    return 0;
+
+}*/
+
+
+
+
+
 int main() {
 
+    int N = pow(2, 10);
+    int M = N;
+
+    test_dct();
     return 1;
     
     //test_perf_2D();

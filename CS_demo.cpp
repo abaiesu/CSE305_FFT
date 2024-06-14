@@ -3,17 +3,49 @@
 #include "helpers.h"
 
 
+double calculate_mse(const CArray& signal1, const CArray& signal2) {
+    if (signal1.size() != signal2.size()) {
+        throw std::invalid_argument("Signals must have the same size.");
+    }
+
+    double mse = 0.0;
+    int N = signal1.size();
+
+    for (int i = 0; i < N; ++i) {
+        mse += pow(std::abs(signal1[i] - signal2[i]), 2);
+    }
+
+    mse /= N;
+
+    return mse;
+}
+
 int main(){
 
     int num_threads = std::thread::hardware_concurrency();
     printf("Number of threads : %d\n", num_threads);
 
+    std::string filename;
     
-    ull N = pow(2, 12);
-    int M = 8;
-    int p = 4;
+    ull N = pow(2, 10);
+
+    CArray data = gen_temp(N);
+    CArray control = data;
+    CArray serial_dft(data);
+    data = sparsify_data(data, N/10);
+    IArray dims = {};
+    idft(data, dims, num_threads);
+
+    double error = calculate_mse(data, control);
+
+    printf("error : %f\n", error);
+    
+    //save2txt(data, filename);
+
+    /*int M = 4;
+    int p = 5;
     IArray dimensions (p, M);
-    int m = N/20;
+    int m = N/10;
     printf("Signal length N = %lld, measurment size m = %d\n", N, m);
 
     std::string filename;
@@ -23,8 +55,8 @@ int main(){
     TwoDDArray Phi = generate_normal_matrix(m, N);
     int K = int(N*0.1);
     DArray y_hat(N);
-    //filename = "x.txt";
-    //save2txt(x, filename);
+    filename = "x.txt";
+    save2txt(x, filename);
 
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -44,12 +76,12 @@ int main(){
     std::cout << "Parallel time: " << elapsed.count() << " sec" << std::endl;
 
 
-    //filename = "x_hat.txt";
-    //save2txt(x_hat, filename);
+    filename = "x_hat.txt";
+    save2txt(x_hat, filename);
 
 
 
-    start = std::chrono::high_resolution_clock::now();
+    /*start = std::chrono::high_resolution_clock::now();
 
     //-------- Undersampling ---------
     x_dct = serial_dct(x);
@@ -64,7 +96,7 @@ int main(){
     elapsed = end - start;
 
     // Output the time taken
-    std::cout << "Serial time: " << elapsed.count() << " sec" << std::endl;
+    std::cout << "Serial time: " << elapsed.count() << " sec" << std::endl;*/
 
     return 0;
 
