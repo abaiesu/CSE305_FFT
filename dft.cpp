@@ -203,11 +203,12 @@ void index_reversal_worker(CArray &input, CArray &res, int start, int end, IArra
 
 void parallel_dft(CArray &input, IArray &dimensions, int num_threads) {
     
-    int N = input.size();
-    int sum_dims = get_Lj(dimensions.size(), dimensions);
+    ull N = input.size();
+    ull sum_dims = get_Lj(dimensions.size(), dimensions);
 
     if (N != sum_dims){
         std::cerr << "The size of the input array is not equal to the product of the dimensions" << std::endl;
+        printf("N = %d, prod_dim = %d\n", N, sum_dims);
         return;
     }
 

@@ -16,9 +16,6 @@ def read_array_from_txt(filename):
 filename = "x.txt"
 x = read_array_from_txt(filename)
 
-filename = "y.txt"
-y = read_array_from_txt(filename)
-
 filename = "x_hat.txt"
 x_hat = read_array_from_txt(filename)
 

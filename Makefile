@@ -9,14 +9,14 @@ INCLUDES = -I eigen
 
 # Source files
 SRCS_CS_demo = CS.cpp helpers.cpp dft.cpp dct.cpp CS_demo.cpp
-SRCS_perf_test = CS.cpp helpers.cpp dft.cpp perf_test.cpp dct.cpp 
+SRCS_perf_test = CS.cpp helpers.cpp dft.cpp dct.cpp perf_test.cpp
 
 # Object files
 OBJS_CS_demo = $(SRCS_CS_demo:.cpp=.o)
 OBJS_perf_test = $(SRCS_perf_test:.cpp=.o)
 
 # Target executable
-CS_demo = CS
+CS_demo = CS_demo
 perf_test = perf_test
 
 # Rule to link object files into the target executable

@@ -1,20 +1,11 @@
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <complex>
-#include <thread>
-#include <chrono>
-#include <cstdlib>  // For std::atoi
-#include "dft.h"
-#include "helpers.h"
+#include "dct.h"
 
-using CArray = std::vector<std::complex<double>>;
-using IArray = std::vector<int>;
 
-// Naive DCT-II implementation
-std::vector<double> naiveDCT(const std::vector<double>& input) {
+// -------------------------- Naive DCT-II and inverse -----------------------------
+
+DArray naiveDCT(const DArray& input) {
     int N = input.size();
-    std::vector<double> output(N);
+    DArray output(N);
 
     // Compute the DCT-II using the naive approach
     for (int k = 0; k < N; ++k) {
@@ -34,10 +25,10 @@ std::vector<double> naiveDCT(const std::vector<double>& input) {
     return output;
 }
 
-// Naive IDCT-II implementation
-std::vector<double> naiveIDCT(const std::vector<double>& input) {
+
+DArray naiveIDCT(const DArray & input) {
     int N = input.size();
-    std::vector<double> output(N);
+    DArray output(N);
 
     // Compute the IDCT-II using the naive approach
     for (int n = 0; n < N; ++n) {
@@ -51,261 +42,171 @@ std::vector<double> naiveIDCT(const std::vector<double>& input) {
     return output;
 }
 
-// Fast DCT-II implementation
-std::vector<double> dctFast(const std::vector<double>& input) {
+
+//-------------------------- DCT-II based of DFT SERIAL -----------------------------
+
+DArray serial_dct(const DArray& input) {
+    
     int N = input.size();
-    std::vector<double> v(N, 0.0);
+    DArray v(N, 0.0);
 
     // Prepare the input for FFT
     for (int i = 0; i <= (N - 1) / 2; ++i) {
         v[i] = input[2 * i];
     }
 
-    if (N % 2) {  // odd length
-        for (int i = 0; i < (N - 1) / 2; ++i) {
-            v[(N - 1) / 2 + 1 + i] = input[N - 2 - 2 * i];
-        }
-    } else {  // even length
-        for (int i = 0; i < N / 2; ++i) {
-            v[N / 2 + i] = input[N - 1 - 2 * i];
-        }
+
+    for (int i = 0; i < N / 2; ++i) {
+        v[N / 2 + i] = input[N - 1 - 2 * i];
     }
 
-    // Perform FFT
     CArray V(v.begin(), v.end());
     serial_dft(V);
 
     // Compute the DCT-II result
-    std::vector<double> result(N);
+    DArray result(N);
     for (int k = 0; k < N; ++k) {
         std::complex<double> factor = std::exp(std::complex<double>(0, -PI * k / (2.0 * N))) * 2.0;
         if (N % 2 != 0 && k == 0) {
             factor /= std::sqrt(2);
         }
-        result[k] = (V[k] * factor).real();
+        result[k] = (V[k] * factor).real()*std::sqrt(1.0 / (2.0 * N));
     }
 
     // Scale the output
-    for (int k = 0; k < N; ++k) {
-        if (k == 0) {
-            result[k] *= std::sqrt(1.0 / (4.0 * N));
-        } else {
-            result[k] *= std::sqrt(1.0 / (2.0 * N));
-        }
-    }
+    result[0] *= double(1/std::sqrt(2));
 
     return result;
 }
 
-// Fast IDCT-II implementation
-std::vector<double> idctFast(const std::vector<double>& dctInput) {
-    int N = dctInput.size();
-    std::vector<std::complex<double>> shiftGrid(N);
 
-    // Prepare the shift grid for IFFT
-    for (int i = 0; i < N; ++i) {
-        shiftGrid[i] = std::sqrt(2.0 * N) * std::exp(std::complex<double>(0, PI * i / (2.0 * N)));
+//-------------------------- DCT-II based of DFT PARALLEL -----------------------------
+
+void worker_dct(CArray& V, DArray& result, int start, int end){
+    
+    int N = result.size();
+    for (int k = start; k < end; ++k) {
+        Complex factor = std::exp(std::complex<double>(0, -PI * k / (2.0 * N))) * 2.0;
+        if (N % 2 != 0 && k == 0) {
+            factor /= std::sqrt(2);
+        }
+        result[k] = (V[k] * factor).real()*std::sqrt(1.0 / (2.0 * N));
     }
-    shiftGrid[0] /= std::sqrt(2.0);
+}
 
-    // Apply the shift grid to the input
-    CArray vTmpComplex(N);
+
+DArray parallel_dct(const DArray& input, IArray dimensions, int num_threads) {
+    
+    int N = input.size();
+    CArray v(N);
+
+    for (int i = 0; i <= (N - 1) / 2; ++i) {
+        v[i] = input[2 * i];
+        v[N / 2 + i] = input[N - 1 - 2 * i];
+    }
+
+    parallel_dft(v, dimensions, num_threads);
+
+    // Compute the DCT-II result
+    DArray result(N);
+    std::vector<std::thread> threads (num_threads);
+    int num_blocks = N/num_threads;
+    int start, end;
+    for (int i = 0; i < num_threads; ++i) {
+        start = i * num_blocks;
+        end = (i == num_threads - 1) ? N : (i + 1) * num_blocks;
+        threads[i] = std::thread(worker_dct, std::ref(v), std::ref(result), start, end);
+    }
+
+    for (int i = 0; i < num_threads; ++i){
+        threads[i].join();
+    }
+
+    // Scale the output
+    result[0] *= double(1/std::sqrt(2));
+
+    return result;
+}
+
+
+
+//----------------------- Inverse DCT-II based of DFT SERIAL --------------------------- 
+
+DArray serial_idct(const DArray& input) {
+    
+    int N = input.size();
+    CArray v(N);
+
     for (int i = 0; i < N; ++i) {
-        vTmpComplex[i] = shiftGrid[i] * dctInput[i];
+        v[i] = std::sqrt(2.0 * N) * std::exp(std::complex<double>(0, PI * i / (2.0 * N)));
+    }
+    v[0] /= std::sqrt(2.0);
+
+    CArray temp(N);
+    for (int i = 0; i < N; ++i) {
+        temp[i] = v[i] * input[i];
     }
 
     // Perform IFFT
     IArray dimensions;
     int num_threads = 1;
-    idft(vTmpComplex, dimensions, num_threads);
+    idft(temp, dimensions, num_threads);
 
     // Reconstruct the original signal
-    std::vector<double> x(N);
+    DArray x(N);
     for (int i = 0; i < N / 2; ++i) {
-        x[2 * i] = vTmpComplex[i].real();
-        x[2 * i + 1] = vTmpComplex[N - i - 1].real();
+        x[2 * i] = temp[i].real();
+        x[2 * i + 1] = temp[N - i - 1].real();
     }
 
     return x;
 }
 
-// Parallelized fast DCT-II implementation
-void dctParallelWorker(const std::vector<double>& input, std::vector<double>& v, int start, int end) {
+
+//----------------------- Inverse DCT-II based of DFT PARALLEL ------------------------- 
+
+void worker_idct(DArray& input, CArray& result, int start, int end){
     int N = input.size();
     for (int i = start; i < end; ++i) {
-        if (i <= (N - 1) / 2) {
-            v[i] = input[2 * i];
-        } else if (N % 2) {  // odd length
-            v[i] = input[N - 2 - 2 * (i - (N - 1) / 2 - 1)];
-        } else {  // even length
-            v[i] = input[N - 1 - 2 * (i - N / 2)];
-        }
+        Complex alpha = std::sqrt(2.0 * N) * std::exp(std::complex<double>(0, PI * i / (2.0 * N)));
+        result[i] = alpha * input[i];
     }
 }
 
-std::vector<double> dctParallel(const std::vector<double>& input, int num_threads) {
+
+DArray parallel_idct(DArray& input, IArray dimensions, int num_threads) {
+    
     int N = input.size();
-    std::vector<double> v(N, 0.0);
+    CArray result(N);
 
-    std::vector<std::thread> threads;
-    int chunk_size = N / num_threads;
-    for (int t = 0; t < num_threads; ++t) {
-        int start = t * chunk_size;
-        int end = (t == num_threads - 1) ? N : (t + 1) * chunk_size;
-        threads.push_back(std::thread(dctParallelWorker, std::cref(input), std::ref(v), start, end));
+    std::vector<std::thread> threads (num_threads);
+    int num_blocks = N/num_threads;
+    int start, end;
+    for (int i = 0; i < num_threads; ++i) {
+        start = i * num_blocks;
+        end = (i == num_threads - 1) ? N : (i + 1) * num_blocks;
+        threads[i] = std::thread(worker_idct, std::ref(input), std::ref(result), start, end);
     }
 
-    for (auto& thread : threads) {
-        thread.join();
+    for (int i = 0; i < num_threads; ++i){
+        threads[i].join();
     }
 
-    // Perform FFT
-    CArray V(v.begin(), v.end());
-    serial_dft(V);
-
-    // Compute the DCT-II result
-    std::vector<double> result(N);
-    for (int k = 0; k < N; ++k) {
-        std::complex<double> factor = std::exp(std::complex<double>(0, -PI * k / (2.0 * N))) * 2.0;
-        if (N % 2 != 0 && k == 0) {
-            factor /= std::sqrt(2);
-        }
-        result[k] = (V[k] * factor).real();
-    }
-
-    // Scale the output
-    for (int k = 0; k < N; ++k) {
-        if (k == 0) {
-            result[k] *= std::sqrt(1.0 / (4.0 * N));
-        } else {
-            result[k] *= std::sqrt(1.0 / (2.0 * N));
-        }
-    }
-
-    return result;
-}
-
-// Parallelized fast IDCT-II implementation
-void idctParallelWorker(const std::vector<std::complex<double>>& vTmpComplex, std::vector<double>& x, int start, int end) {
-    int N = vTmpComplex.size();
-    for (int i = start; i < end; ++i) {
-        if (i < N / 2) {
-            x[2 * i] = vTmpComplex[i].real();
-            x[2 * i + 1] = vTmpComplex[N - i - 1].real();
-        }
-    }
-}
-
-std::vector<double> idctParallel(const std::vector<double>& dctInput, int num_threads) {
-    int N = dctInput.size();
-    std::vector<std::complex<double>> shiftGrid(N);
-
-    // Prepare the shift grid for IFFT
-    for (int i = 0; i < N; ++i) {
-        shiftGrid[i] = std::sqrt(2.0 * N) * std::exp(std::complex<double>(0, PI * i / (2.0 * N)));
-    }
-    shiftGrid[0] /= std::sqrt(2.0);
-
-    // Apply the shift grid to the input
-    CArray vTmpComplex(N);
-    for (int i = 0; i < N; ++i) {
-        vTmpComplex[i] = shiftGrid[i] * dctInput[i];
-    }
+    result[0] /= std::sqrt(2.0);
 
     // Perform IFFT
-    IArray dimensions;
-    idft(vTmpComplex, dimensions, num_threads);
+    idft(result, dimensions, num_threads);
 
     // Reconstruct the original signal
-    std::vector<double> x(N, 0.0);
-
-    std::vector<std::thread> threads;
-    int chunk_size = N / (2 * num_threads);
-    for (int t = 0; t < num_threads; ++t) {
-        int start = t * chunk_size;
-        int end = (t == num_threads - 1) ? N / 2 : (t + 1) * chunk_size;
-        threads.push_back(std::thread(idctParallelWorker, std::cref(vTmpComplex), std::ref(x), start, end));
-    }
-
-    for (auto& thread : threads) {
-        thread.join();
+    DArray x(N);
+    for (int i = 0; i < N / 2; ++i) {
+        x[2 * i] = result[i].real();
+        x[2 * i + 1] = result[N - i - 1].real();
     }
 
     return x;
 }
 
-// Helper function to convert std::vector<double> to CArray
-CArray vectorToCArray(const std::vector<double>& vec) {
-    CArray result(vec.size());
-    for (size_t i = 0; i < vec.size(); ++i) {
-        result[i] = std::complex<double>(vec[i], 0.0);
-    }
-    return result;
-}
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " num_threads" << std::endl;
-        return 1;
-    }
 
-    int num_threads = std::atoi(argv[1]);
 
-    // Input data
-    std::vector<double> input = {1.0, 2.0, 3.0, 4.0};
-
-    // Measure running times
-    auto start = std::chrono::high_resolution_clock::now();
-    std::vector<double> dctNaiveOutput = naiveDCT(input);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationNaiveDCT = end - start;
-    std::cout << "Naive DCT time: " << durationNaiveDCT.count() << " seconds\n";
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<double> idctNaiveOutput = naiveIDCT(dctNaiveOutput);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationNaiveIDCT = end - start;
-    std::cout << "Naive IDCT time: " << durationNaiveIDCT.count() << " seconds\n";
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<double> dctFastOutput = dctFast(input);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationFastDCT = end - start;
-    std::cout << "Fast DCT time: " << durationFastDCT.count() << " seconds\n";
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<double> idctFastOutput = idctFast(dctFastOutput);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationFastIDCT = end - start;
-    std::cout << "Fast IDCT time: " << durationFastIDCT.count() << " seconds\n";
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<double> dctParallelOutput = dctParallel(input, num_threads);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationParallelDCT = end - start;
-    std::cout << "Parallelized Fast DCT time: " << durationParallelDCT.count() << " seconds\n";
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<double> idctParallelOutput = idctParallel(dctParallelOutput, num_threads);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> durationParallelIDCT = end - start;
-    std::cout << "Parallelized Fast IDCT time: " << durationParallelIDCT.count() << " seconds\n";
-
-    // Convert vectors to CArray for comparison
-    /*CArray inputCArray = vectorToCArray(input);
-    CArray idctNaiveCArray = vectorToCArray(idctNaiveOutput);
-    CArray idctFastCArray = vectorToCArray(idctFastOutput);
-    CArray idctParallelCArray = vectorToCArray(idctParallelOutput);
-
-    // Compare results with original input
-    bool are_equal_naive = are_arrays_equal(inputCArray, idctNaiveCArray);
-    bool are_equal_fast = are_arrays_equal(inputCArray, idctFastCArray);
-    bool are_equal_parallel = are_arrays_equal(inputCArray, idctParallelCArray);
-
-    std::cout << "Naive IDCT result matches original input: " << (are_equal_naive ? "Yes" : "No") << std::endl;
-    std::cout << "Fast IDCT result matches original input: " << (are_equal_fast ? "Yes" : "No") << std::endl;
-    std::cout << "Parallel IDCT result matches original input: " << (are_equal_parallel ? "Yes" : "No") << std::endl;
-
-    return 0;
-
-}*/

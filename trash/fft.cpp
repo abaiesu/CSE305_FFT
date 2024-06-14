@@ -341,4 +341,86 @@ void fft2D(TwoDCArray & data, IArray &dimensions, int num_threads){
 }
 
 
+// Helper function to convert std::vector<double> to CArray
+CArray vectorToCArray(const std::vector<double>& vec) {
+    CArray result(vec.size());
+    for (size_t i = 0; i < vec.size(); ++i) {
+        result[i] = std::complex<double>(vec[i], 0.0);
+    }
+    return result;
+}
+
+int main() {
+
+    int num_threads = 20;
+
+    // Input data
+    ull N = pow(2, 15);
+    int M = 8;
+    int p = 5;
+    IArray dimensions (p, M);
+    DArray input = gen_wave(N);
+
+    // Measure running times
+    auto start = std::chrono::high_resolution_clock::now();
+    //std::vector<double> dctNaiveOutput = naiveDCT(input);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationNaiveDCT = end - start;
+    /*std::cout << "Naive DCT time: " << durationNaiveDCT.count() << " seconds\n";
+
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<double> idctNaiveOutput = naiveIDCT(dctNaiveOutput);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationNaiveIDCT = end - start;
+    std::cout << "Naive IDCT time: " << durationNaiveIDCT.count() << " seconds\n";*/
+
+    start = std::chrono::high_resolution_clock::now();
+    DArray dctFastOutput = serial_idct(input);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationFastDCT = end - start;
+    std::cout << "Fast DCT time: " << durationFastDCT.count() << " seconds\n";
+
+    /*start = std::chrono::high_resolution_clock::now();
+    std::vector<double> idctFastOutput = idctFast(dctFastOutput);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationFastIDCT = end - start;
+    std::cout << "Fast IDCT time: " << durationFastIDCT.count() << " seconds\n";*/
+
+    start = std::chrono::high_resolution_clock::now();
+    //std::vector<double> dctParallelOutput = dctParallel(input, num_threads);
+    std::vector<double> dctParallelOutput = parallel_idct(input, dimensions, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationParallelDCT = end - start;
+    std::cout << "Parallelized Fast DCT time: " << durationParallelDCT.count() << " seconds\n";
+
+
+    bool are_equal = are_arrays_equal(dctFastOutput, dctParallelOutput);
+
+    std::cout << "Correct ? " << (are_equal ? "Yes" : "No") << std::endl;
+
+    /*start = std::chrono::high_resolution_clock::now();
+    std::vector<double> idctParallelOutput = idctParallel(dctParallelOutput, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationParallelIDCT = end - start;
+    std::cout << "Parallelized Fast IDCT time: " << durationParallelIDCT.count() << " seconds\n";*/
+
+    // Convert vectors to CArray for comparison
+    /*CArray inputCArray = vectorToCArray(input);
+    CArray idctNaiveCArray = vectorToCArray(idctNaiveOutput);
+    CArray idctFastCArray = vectorToCArray(idctFastOutput);
+    CArray idctParallelCArray = vectorToCArray(idctParallelOutput);
+
+    // Compare results with original input
+    bool are_equal_naive = are_arrays_equal(inputCArray, idctNaiveCArray);
+    bool are_equal_fast = are_arrays_equal(inputCArray, idctFastCArray);
+    bool are_equal_parallel = are_arrays_equal(inputCArray, idctParallelCArray);
+
+    std::cout << "Naive IDCT result matches original input: " << (are_equal_naive ? "Yes" : "No") << std::endl;
+    std::cout << "Fast IDCT result matches original input: " << (are_equal_fast ? "Yes" : "No") << std::endl;
+    std::cout << "Parallel IDCT result matches original input: " << (are_equal_parallel ? "Yes" : "No") << std::endl;
+
+    return 0;
+
+}*/
+}
 
