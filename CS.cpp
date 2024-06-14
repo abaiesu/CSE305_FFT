@@ -1,10 +1,11 @@
 #include "CS.h"
+#include "dct.h"
 
 
 
 // ---------------------- Helpers for the OMP algo --------------------
 
-MatrixXd TwoDCArrayToMatrixXd(const TwoDCArray& twoDArray) {
+MatrixXd TwoDDArrayToMatrixXd(const TwoDDArray& twoDArray) {
     int rows = twoDArray.size();
     int cols = twoDArray[0].size();
 
@@ -12,46 +13,46 @@ MatrixXd TwoDCArrayToMatrixXd(const TwoDCArray& twoDArray) {
 
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            matrix(i, j) = twoDArray[i][j].real(); // Take the real part of complex number
+            matrix(i, j) = twoDArray[i][j]; 
         }
     }
 
     return matrix;
 }
 
-VectorXd CArrayToVectorXd(const CArray& cArray) {
-    int size = cArray.size();
+VectorXd DArrayToVectorXd(const DArray& array) {
+    int size = array.size();
 
     VectorXd vector(size);
 
     for (int i = 0; i < size; ++i) {
-        vector(i) = cArray[i].real(); // Take the real part of complex number
+        vector(i) = array[i]; 
     }
 
     return vector;
 }
 
-CArray VectorXdToCArray(const VectorXd& vector) {
+DArray VectorXdToDArray(const VectorXd& vector) {
     int size = vector.size();
 
-    CArray cArray(size);
+    DArray array(size);
 
     for (int i = 0; i < size; ++i) {
-        cArray[i] = Complex(vector(i), 0.0); // Construct complex numbers from real part of Eigen vector
+        array[i] = vector(i); // Construct complex numbers from real part of Eigen vector
     }
 
-    return cArray;
+    return array;
 }
 
-TwoDCArray MatrixXdToTwoDCArray(const MatrixXd& matrix) {
+TwoDDArray MatrixXdToTwoDDArray(const MatrixXd& matrix) {
     int rows = matrix.rows();
     int cols = matrix.cols();
 
-    TwoDCArray twoDArray(rows, CArray(cols));
+    TwoDDArray twoDArray(rows, DArray(cols));
 
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            twoDArray[i][j] = Complex(matrix(i, j), 0.0); // Construct complex numbers from real part of Eigen matrix
+            twoDArray[i][j] = matrix(i, j); // Construct complex numbers from real part of Eigen matrix
         }
     }
 
@@ -69,12 +70,12 @@ void get_correlation(const MatrixXd& D, const VectorXd& residual, VectorXd& corr
     }
 }
 
-void serial_omp (const TwoDCArray& Phi_, const CArray& y_, CArray& x_hat_, int K) {
+void serial_omp (const TwoDDArray& Phi_, const DArray& y_, DArray& x_hat_, int K) {
     
 
-    MatrixXd Phi = TwoDCArrayToMatrixXd(Phi_);
-    VectorXd y = CArrayToVectorXd(y_);
-    VectorXd x_hat = CArrayToVectorXd(x_hat_);
+    MatrixXd Phi = TwoDDArrayToMatrixXd(Phi_);
+    VectorXd y = DArrayToVectorXd(y_);
+    VectorXd x_hat = DArrayToVectorXd(x_hat_);
 
     int n = Phi.cols();
     VectorXd residual = y;
@@ -116,16 +117,16 @@ void serial_omp (const TwoDCArray& Phi_, const CArray& y_, CArray& x_hat_, int K
         x_hat(indices[i]) = coef(i);
     }
 
-    x_hat_ = VectorXdToCArray(x_hat);
+    x_hat_ = VectorXdToDArray(x_hat);
 
 }
 
-void parallel_omp (const TwoDCArray& Phi_, const CArray& y_, CArray& x_hat_, int K, int num_threads) {
+void parallel_omp (const TwoDDArray& Phi_, const DArray& y_, DArray& x_hat_, int K, int num_threads) {
     
 
-    MatrixXd Phi = TwoDCArrayToMatrixXd(Phi_);
-    VectorXd y = CArrayToVectorXd(y_);
-    VectorXd x_hat = CArrayToVectorXd(x_hat_);
+    MatrixXd Phi = TwoDDArrayToMatrixXd(Phi_);
+    VectorXd y = DArrayToVectorXd(y_);
+    VectorXd x_hat = DArrayToVectorXd(x_hat_);
 
 
     int n = Phi.cols();
@@ -176,7 +177,7 @@ void parallel_omp (const TwoDCArray& Phi_, const CArray& y_, CArray& x_hat_, int
         x_hat(indices[i]) = coef(i);
     }
 
-    x_hat_ = VectorXdToCArray(x_hat);
+    x_hat_ = VectorXdToDArray(x_hat);
 
 }
 
@@ -184,13 +185,13 @@ void parallel_omp (const TwoDCArray& Phi_, const CArray& y_, CArray& x_hat_, int
 // ----------------------------- Undersampling ------------------------------
 
 
-TwoDCArray generate_normal_matrix(int M, int N) {
+TwoDDArray generate_normal_matrix(int M, int N) {
     
     std::random_device rd;
     std::mt19937 gen(rd());
     std::normal_distribution<double> distribution(0.0, 1.0);
 
-    TwoDCArray matrix(M, CArray(N));
+    TwoDDArray matrix(M, DArray(N));
     for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
             matrix[i][j] = distribution(gen);
@@ -199,12 +200,12 @@ TwoDCArray generate_normal_matrix(int M, int N) {
     return matrix;
 }
 
-CArray serial_matrix_mul(TwoDCArray& matrix, CArray& vector) {
+DArray serial_matrix_mul(TwoDDArray& matrix, DArray& vector) {
     
     int rows = matrix.size(); // Number of rows in matrix
     int cols = matrix[0].size(); // Number of columns in matrix
 
-    CArray result(rows, 0); // Resultant vector
+    DArray result(rows, 0); // Resultant vector
 
     // Perform matrix-vector multiplication
     for (int i = 0; i < rows; ++i) {
@@ -216,7 +217,7 @@ CArray serial_matrix_mul(TwoDCArray& matrix, CArray& vector) {
     return result;
 }
 
-void worker_matrix_mul(const TwoDCArray& A, const CArray& x, CArray& y, int start, int end) {
+void worker_matrix_mul(const TwoDDArray& A, const DArray& x, DArray& y, int start, int end) {
     
     int cols = A[0].size();
 
@@ -227,9 +228,9 @@ void worker_matrix_mul(const TwoDCArray& A, const CArray& x, CArray& y, int star
     }
 }
 
-CArray parallel_matrix_mul(const TwoDCArray& A, const CArray& x, int num_threads){
+DArray parallel_matrix_mul(const TwoDDArray& A, const DArray& x, int num_threads){
     int M = A.size();
-    CArray y(M, 0.0);
+    DArray y(M, 0.0);
     std::vector<std::thread> threads(num_threads);
     int chunk_size = std::ceil(static_cast<double>(M) / num_threads);
 

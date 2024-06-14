@@ -135,7 +135,7 @@ CArray vectorToCArray(const std::vector<double>& vec) {
     return result;
 }
 
-int main() {
+/*int main() {
     // Input data
     int N = pow(2, 12);
     DArray input = gen_wave(N);
@@ -148,7 +148,7 @@ int main() {
     }
     std::cout << std::endl;*/
 
-    DArray idctNaiveOutput = naiveIDCT(dctNaiveOutput);
+    /*DArray idctNaiveOutput = naiveIDCT(dctNaiveOutput);
     /*std::cout << "Naive IDCT output:\n";
     for (double val : idctNaiveOutput) {
         std::cout << val << " ";
@@ -156,14 +156,14 @@ int main() {
     std::cout << std::endl;*/
 
     // Perform fast DCT and IDCT
-    DArray dctFastOutput = dctFast(input);
+    /* DArray dctFastOutput = dctFast(input);
     /*std::cout << "Fast DCT output:\n";
     for (double val : dctFastOutput) {
         std::cout << val << " ";
     }
     std::cout << std::endl;*/
 
-    DArray idctFastOutput = idctFast(dctFastOutput);
+    /*DArray idctFastOutput = idctFast(dctFastOutput);
     /*std::cout << "Fast IDCT output:\n";
     for (double val : idctFastOutput) {
         std::cout << val << " ";
@@ -171,7 +171,7 @@ int main() {
     std::cout << std::endl;*/
 
     // Convert vectors to CArray for comparison
-    CArray inputCArray = vectorToCArray(input);
+    /*CArray inputCArray = vectorToCArray(input);
     CArray idctNaiveCArray = vectorToCArray(idctNaiveOutput);
     CArray idctFastCArray = vectorToCArray(idctFastOutput);
 
@@ -183,4 +183,5 @@ int main() {
     std::cout << "Fast IDCT result matches original input: " << (are_equal_fast ? "Yes" : "No") << std::endl;
 
     return 0;
-}
+
+}*/

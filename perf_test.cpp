@@ -1,5 +1,6 @@
 #include "dft.h"
 #include "CS.h"
+#include "helpers.h"
 
 CArray test_1D_fft_num_threads(int M, int p, bool print){
 
@@ -87,21 +88,21 @@ void test_matrix_mul() {
     int num_threads = 20;
 
     // random Gaussian matrix A
-    TwoDCArray A = generate_normal_matrix(M, N);
+    TwoDDArray A = generate_normal_matrix(M, N);
 
     // Input vector x
-    CArray x = gen_temp(N);
+    DArray x = gen_wave(N);
 
 
     // Measure time for serial multiplication
     auto start_serial = std::chrono::steady_clock::now();
-    CArray serial_result = serial_matrix_mul(A, x);
+    DArray serial_result = serial_matrix_mul(A, x);
     auto end_serial = std::chrono::steady_clock::now();
     std::chrono::duration<double> serial_duration = end_serial - start_serial;
 
     // Measure time for parallel multiplication
     auto start_parallel = std::chrono::steady_clock::now();
-    CArray parallel_result = parallel_matrix_mul(A, x, num_threads);
+    DArray parallel_result = parallel_matrix_mul(A, x, num_threads);
     auto end_parallel = std::chrono::steady_clock::now();
     std::chrono::duration<double> parallel_duration = end_parallel - start_parallel;
 
@@ -112,7 +113,7 @@ void test_matrix_mul() {
     double speedup = serial_duration.count()/parallel_duration.count();
     std::cout << "Speedup: " << speedup << " seconds" << std::endl;
 
-    if (are_arrays_equal(serial_result, parallel_result)) {
+    if (are_arrays_equal<DArray>(serial_result, parallel_result)) {
         std::cout << "Correct output :)" << std::endl;
     } else {
         std::cout << "Incorrect output :(" << std::endl;
@@ -129,11 +130,10 @@ void test_omp(){
     int N = 2000;
     int M = 600;
     int K = 100;
-    TwoDCArray A = generate_normal_matrix(M, N);
-    CArray y_ser(M);
-    CArray y_par(M);
-    CArray x = gen_temp(N);       
-    x = sparsify_data(x, K);
+    TwoDDArray A = generate_normal_matrix(M, N);
+    DArray y_ser(M);
+    DArray y_par(M);
+    DArray x = gen_wave(N);
     
 
     // Time serial_omp
@@ -157,7 +157,7 @@ void test_omp(){
     double ratio = static_cast<double>(duration_serial.count()) / duration_parallel.count();
     cout << "Ratio (Serial Time / Parallel Time): " << ratio << endl;
 
-    if (are_arrays_equal(y_par, y_ser)) {
+    if (are_arrays_equal<DArray>(y_par, y_ser)) {
         std::cout << "Correct output :)" << std::endl;
     } else {
         std::cout << "Incorrect output :(" << std::endl;
