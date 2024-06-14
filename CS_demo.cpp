@@ -22,28 +22,10 @@ double calculate_mse(const CArray& signal1, const CArray& signal2) {
 
 int main(){
 
-    int num_threads = std::thread::hardware_concurrency();
-    printf("Number of threads : %d\n", num_threads);
-
-    std::string filename;
-    
-    ull N = pow(2, 10);
-
-    CArray data = gen_temp(N);
-    CArray control = data;
-    CArray serial_dft(data);
-    data = sparsify_data(data, N/10);
-    IArray dims = {};
-    idft(data, dims, num_threads);
-
-    double error = calculate_mse(data, control);
-
-    printf("error : %f\n", error);
-    
-    //save2txt(data, filename);
-
-    /*int M = 4;
+    int num_threads = 20;
+    int M = 4;
     int p = 5;
+    ull N = pow(M, p);
     IArray dimensions (p, M);
     int m = N/10;
     printf("Signal length N = %lld, measurment size m = %d\n", N, m);
@@ -76,7 +58,7 @@ int main(){
     std::cout << "Parallel time: " << elapsed.count() << " sec" << std::endl;
 
 
-    filename = "x_hat.txt";
+    /*filename = "x_hat.txt";
     save2txt(x_hat, filename);
 
 
