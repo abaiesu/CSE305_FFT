@@ -3,6 +3,8 @@
 #include <cmath>
 #include <complex>
 #include <thread>
+#include <chrono>
+#include <cstdlib>  // For std::atoi
 #include "dft.h"
 #include "helpers.h"
 
@@ -141,13 +143,11 @@ void dctParallelWorker(const std::vector<double>& input, std::vector<double>& v,
     }
 }
 
-std::vector<double> dctParallel(const std::vector<double>& input) {
+std::vector<double> dctParallel(const std::vector<double>& input, int num_threads) {
     int N = input.size();
     std::vector<double> v(N, 0.0);
 
-    int num_threads = std::thread::hardware_concurrency();
     std::vector<std::thread> threads;
-
     int chunk_size = N / num_threads;
     for (int t = 0; t < num_threads; ++t) {
         int start = t * chunk_size;
@@ -196,7 +196,7 @@ void idctParallelWorker(const std::vector<std::complex<double>>& vTmpComplex, st
     }
 }
 
-std::vector<double> idctParallel(const std::vector<double>& dctInput) {
+std::vector<double> idctParallel(const std::vector<double>& dctInput, int num_threads) {
     int N = dctInput.size();
     std::vector<std::complex<double>> shiftGrid(N);
 
@@ -214,13 +214,11 @@ std::vector<double> idctParallel(const std::vector<double>& dctInput) {
 
     // Perform IFFT
     IArray dimensions;
-    int num_threads = 1;
     idft(vTmpComplex, dimensions, num_threads);
 
     // Reconstruct the original signal
     std::vector<double> x(N, 0.0);
-    
-    num_threads = std::thread::hardware_concurrency();
+
     std::vector<std::thread> threads;
     int chunk_size = N / (2 * num_threads);
     for (int t = 0; t < num_threads; ++t) {
@@ -245,55 +243,53 @@ CArray vectorToCArray(const std::vector<double>& vec) {
     return result;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " num_threads" << std::endl;
+        return 1;
+    }
+
+    int num_threads = std::atoi(argv[1]);
+
     // Input data
     std::vector<double> input = {1.0, 2.0, 3.0, 4.0};
 
-    // Perform naive DCT and IDCT
+    // Measure running times
+    auto start = std::chrono::high_resolution_clock::now();
     std::vector<double> dctNaiveOutput = naiveDCT(input);
-    std::cout << "Naive DCT output:\n";
-    for (double val : dctNaiveOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationNaiveDCT = end - start;
+    std::cout << "Naive DCT time: " << durationNaiveDCT.count() << " seconds\n";
 
+    start = std::chrono::high_resolution_clock::now();
     std::vector<double> idctNaiveOutput = naiveIDCT(dctNaiveOutput);
-    std::cout << "Naive IDCT output:\n";
-    for (double val : idctNaiveOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationNaiveIDCT = end - start;
+    std::cout << "Naive IDCT time: " << durationNaiveIDCT.count() << " seconds\n";
 
-    // Perform fast DCT and IDCT
+    start = std::chrono::high_resolution_clock::now();
     std::vector<double> dctFastOutput = dctFast(input);
-    std::cout << "Fast DCT output:\n";
-    for (double val : dctFastOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationFastDCT = end - start;
+    std::cout << "Fast DCT time: " << durationFastDCT.count() << " seconds\n";
 
+    start = std::chrono::high_resolution_clock::now();
     std::vector<double> idctFastOutput = idctFast(dctFastOutput);
-    std::cout << "Fast IDCT output:\n";
-    for (double val : idctFastOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationFastIDCT = end - start;
+    std::cout << "Fast IDCT time: " << durationFastIDCT.count() << " seconds\n";
 
-    // Perform parallelized fast DCT
-    std::vector<double> dctParallelOutput = dctParallel(input);
-    std::cout << "Parallelized Fast DCT output:\n";
-    for (double val : dctParallelOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<double> dctParallelOutput = dctParallel(input, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationParallelDCT = end - start;
+    std::cout << "Parallelized Fast DCT time: " << durationParallelDCT.count() << " seconds\n";
 
-    // Perform parallelized fast IDCT
-    std::vector<double> idctParallelOutput = idctParallel(dctParallelOutput);
-    std::cout << "Parallelized Fast IDCT output:\n";
-    for (double val : idctParallelOutput) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<double> idctParallelOutput = idctParallel(dctParallelOutput, num_threads);
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> durationParallelIDCT = end - start;
+    std::cout << "Parallelized Fast IDCT time: " << durationParallelIDCT.count() << " seconds\n";
 
     // Convert vectors to CArray for comparison
     CArray inputCArray = vectorToCArray(input);
@@ -312,4 +308,3 @@ int main() {
 
     return 0;
 }
-
