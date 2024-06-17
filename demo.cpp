@@ -3,24 +3,6 @@
 #include "helpers.h"
 
 
-double calculate_mse(const CArray& signal1, const CArray& signal2) {
-    if (signal1.size() != signal2.size()) {
-        throw std::invalid_argument("Signals must have the same size.");
-    }
-
-    double mse = 0.0;
-    int N = signal1.size();
-
-    for (int i = 0; i < N; ++i) {
-        mse += pow(std::abs(signal1[i] - signal2[i]), 2);
-    }
-
-    mse /= N;
-
-    return mse;
-}
-
-
 void cs_demo(){
 
     int num_threads = 20;
@@ -83,6 +65,9 @@ void cs_demo(){
 
 }
 
+
+
+
 void dft_demo(){
 
     int num_threads = 20;
@@ -117,6 +102,8 @@ void dft_demo(){
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <0|1>\n", argv[0]);
+        fprintf(stderr, "0 : dft_demo\n");
+        fprintf(stderr, "1 : cs_demo\n");
         return 1;
     }
 

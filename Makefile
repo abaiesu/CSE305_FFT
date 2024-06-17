@@ -8,19 +8,19 @@ CXXFLAGS = -Wall -Wextra -std=c++11
 INCLUDES = -I eigen
 
 # Source files
-SRCS_CS_demo = CS.cpp helpers.cpp dft.cpp dct.cpp CS_demo.cpp
+SRCS_demo = CS.cpp helpers.cpp dft.cpp dct.cpp demo.cpp
 SRCS_perf_test = CS.cpp helpers.cpp dft.cpp dct.cpp perf_test.cpp
 
 # Object files
-OBJS_CS_demo = $(SRCS_CS_demo:.cpp=.o)
+OBJS_demo = $(SRCS_demo:.cpp=.o)
 OBJS_perf_test = $(SRCS_perf_test:.cpp=.o)
 
 # Target executable
-CS_demo = CS_demo
+demo = demo
 perf_test = perf_test
 
 # Rule to link object files into the target executable
-$(CS_demo): $(OBJS_CS_demo)
+$(demo): $(OBJS_demo)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
 
 $(perf_test): $(OBJS_perf_test)
@@ -45,11 +45,11 @@ matmul_gpu:
 
 # Clean rule
 clean:
-	rm -f $(OBJS_CS_demo) $(OBJS_perf_test) $(CS_demo) $(perf_test)
+	rm -f $(OBJS_demo) $(OBJS_perf_test) $(demo) $(perf_test)
 	rm -f dct_gpu
 	rm -f dft_gpu
 	rm -f matmul_gpu
 	rm -f *.png
 	rm -f *.txt
 
-all: $(CS_demo) $(perf_test)
+all: $(demo) $(perf_test)
