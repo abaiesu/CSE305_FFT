@@ -45,7 +45,7 @@ DArray naiveIDCT(const DArray & input) {
 
 //-------------------------- DCT-II based of DFT SERIAL -----------------------------
 
-DArray serial_dct(const DArray& input) {
+DArray serial_dct(DArray& input) {
     
     int N = input.size();
     DArray v(N, 0.0);
@@ -82,7 +82,7 @@ DArray serial_dct(const DArray& input) {
 
 //-------------------------- DCT-II based of DFT PARALLEL -----------------------------
 
-void worker_dct(CArray& V, DArray& result, int start, int end){
+void worker_dct_1(CArray& V, DArray& result, int start, int end){
     
     int N = result.size();
     for (int k = start; k < end; ++k) {
@@ -95,27 +95,49 @@ void worker_dct(CArray& V, DArray& result, int start, int end){
 }
 
 
-DArray parallel_dct(const DArray& input, IArray dimensions, int num_threads) {
-    
-    int N = input.size();
-    CArray v(N);
 
-    for (int i = 0; i <= (N - 1) / 2; ++i) {
+void worker_dct_2(DArray& input, CArray& v, int N, int start, int end){
+    
+    for (int i = start; i < end; ++i) {
         v[i] = input[2 * i];
         v[N / 2 + i] = input[N - 1 - 2 * i];
     }
+
+}
+
+
+
+
+DArray parallel_dct(DArray& input, IArray dimensions, int num_threads) {
+    
+    int N = input.size();
+    CArray v(N);
+    std::vector<std::thread> threads (num_threads);
+
+    int n = (N - 1)/2;
+    int num_blocks = n/num_threads;
+    int start, end;
+    for (int i = 0; i < num_threads; ++i) {
+        start = i * num_blocks;
+        end = (i == num_threads - 1) ? (N - 1)/2 + 1 : (i + 1) * num_blocks;
+        threads[i] = std::thread(worker_dct_2, std::ref(input), std::ref(v), N, start, end);
+    }
+
+    for (int i = 0; i < num_threads; ++i){
+        threads[i].join();
+    }
+    
 
     parallel_dft(v, dimensions, num_threads);
 
     // Compute the DCT-II result
     DArray result(N);
-    std::vector<std::thread> threads (num_threads);
-    int num_blocks = N/num_threads;
-    int start, end;
+    //std::vector<std::thread> threads_ (num_threads);
+    num_blocks = N/num_threads;
     for (int i = 0; i < num_threads; ++i) {
         start = i * num_blocks;
         end = (i == num_threads - 1) ? N : (i + 1) * num_blocks;
-        threads[i] = std::thread(worker_dct, std::ref(v), std::ref(result), start, end);
+        threads[i] = std::thread(worker_dct_1, std::ref(v), std::ref(result), start, end);
     }
 
     for (int i = 0; i < num_threads; ++i){

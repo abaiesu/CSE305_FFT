@@ -20,7 +20,8 @@ double calculate_mse(const CArray& signal1, const CArray& signal2) {
     return mse;
 }
 
-int main(){
+
+void cs_demo(){
 
     int num_threads = 20;
     int M = 4;
@@ -58,7 +59,7 @@ int main(){
     std::cout << "Parallel time: " << elapsed.count() << " sec" << std::endl;
 
 
-    /*filename = "x_hat.txt";
+    filename = "x_hat.txt";
     save2txt(x_hat, filename);
 
 
@@ -80,6 +81,54 @@ int main(){
     // Output the time taken
     std::cout << "Serial time: " << elapsed.count() << " sec" << std::endl;*/
 
-    return 0;
+}
 
+void dft_demo(){
+
+    int num_threads = 20;
+    int M = 4;
+    int p = 5;
+    ull N = pow(M, p);
+    IArray dimensions (p, M);
+    
+    printf("Signal length N = %lld\n", N);
+
+    std::string filename;
+
+    DArray x = gen_wave(N);
+    filename = "x.txt";
+    save2txt(x, filename);
+
+    CArray x_c(x.begin(), x.end());
+    parallel_dft(x_c, dimensions, num_threads);
+
+    CArray x_sparse = sparsify_data(x_c, N/20); //keep 10% of the coeff
+
+    idft(x_sparse, dimensions, num_threads);
+
+    filename = "x_hat.txt";
+    save2txt(x_sparse, filename);
+
+}
+
+
+
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <0|1>\n", argv[0]);
+        return 1;
+    }
+
+    int choice = atoi(argv[1]);
+    if (choice == 0) {
+        dft_demo();
+    } else if (choice == 1) {
+        cs_demo();
+    } else {
+        fprintf(stderr, "Invalid argument. Usage: %s <0|1>\n", argv[0]);
+        return 1;
+    }
+
+    return 0;
 }

@@ -35,7 +35,7 @@ $(perf_test): $(OBJS_perf_test)
 NVCC = /usr/local/cuda/bin/nvcc
 
 dct_gpu:
-	$(NVCC) dct_gpu.cu -o dct_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
+	$(NVCC) dct_gpu.cu helpers.cpp dct.cpp dft.cpp -o dct_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
 
 dft_gpu:
 	$(NVCC) dft_gpu.cu helpers.cpp -o dft_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
@@ -49,5 +49,7 @@ clean:
 	rm -f dct_gpu
 	rm -f dft_gpu
 	rm -f matmul_gpu
+	rm -f *.png
+	rm -f *.txt
 
 all: $(CS_demo) $(perf_test)

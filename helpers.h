@@ -11,6 +11,7 @@
 #include <fstream>
 #include <algorithm>
 #include <thread>
+#include <random>
 #include <mutex>
 
 using namespace std;
@@ -58,8 +59,6 @@ bool are_arrays_equal(const T& a, const T& b) {
 
 
 
-
-
 bool compareRealPart(const std::complex<double>& a, const std::complex<double>& b);
 
 CArray sparsify_data(CArray& y, int num_components);
@@ -73,5 +72,12 @@ bool is_power2(int N);
 TwoDCArray generate_random_2d_array(int N, int M, double min_value, double max_value);
 
 bool are_matrices_equal(TwoDCArray arr1, TwoDCArray arr2);
+
+
+TwoDDArray generate_normal_matrix(int M, int N);
+
+DArray serial_matrix_vect_mul(TwoDDArray& matrix, DArray& vector);
+
+DArray parallel_matrix_mul(const TwoDDArray& A, const DArray& x, int num_threads);
 
 #endif // HELPERS_H
