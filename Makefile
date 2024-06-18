@@ -43,6 +43,9 @@ dft_gpu:
 matmul_gpu:
 	$(NVCC) matmul_gpu.cu helpers.cpp -o matmul_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
 
+dft_gpu:
+	$(NVCC) dft_gpu.cu helpers.cpp dft.cpp -o dft_gpu -arch=sm_60 -std=c++11 -I/usr/local/cuda/include
+
 # Clean rule
 clean:
 	rm -f $(OBJS_demo) $(OBJS_perf_test) $(demo) $(perf_test)

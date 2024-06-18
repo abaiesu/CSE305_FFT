@@ -16,7 +16,7 @@ DArray gen_wave(ull n) {
     
     for (int i = 0; i < n; ++i) {
         double t = static_cast<double>(i) / (n - 1);
-        signal[i] = std::cos(2 * 97 * pi * t) + std::cos(2 * 777 * pi * t);
+        signal[i] = std::cos(2 * 90 * pi * t) + std::cos(2 * 6 * pi * t) + std::cos(2 * 20 * pi * t);
     }
     
     return signal;
@@ -53,7 +53,7 @@ void save2txt(const DArray& array, const std::string& filename){
         }
 
         outFile.close();
-        std::cout << "Output saved to " << filename << std::endl;
+        std::cout << "Saved to " << filename << std::endl;
     } else {
         std::cerr << "Unable to open file for writing" << std::endl;
     }

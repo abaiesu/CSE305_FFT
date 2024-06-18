@@ -104,7 +104,7 @@ void gfft(CArray& x, double alpha) {
         return;
     }
 
-    if (N == 2){ //Radix 2 = Chunks of 2
+    /*if (N == 2){ //Radix 2 = Chunks of 2
         Complex even = x[0];
         Complex odd = x[1];
         Complex Twiddle = std::polar(1.0, -2 * PI * alpha / N);
@@ -112,7 +112,7 @@ void gfft(CArray& x, double alpha) {
         x[0] = even + t;
         x[1] = even - t;
         return;
-    }
+    }*/
 
     // Divide
     CArray even(N / 2);
@@ -311,7 +311,7 @@ void idft(CArray& y, IArray &dimensions, const int num_threads = 5) {
     }
 }
 
-// -------------------------------- Serial 2D FFT ---------------------------------
+// -------------------------------- Serial 2D DFT ---------------------------------
 
 
 void serial_dft2D(TwoDCArray & data){
@@ -340,8 +340,38 @@ void serial_dft2D(TwoDCArray & data){
     }
 }
 
+// ---------------------------- Parallel 2D DFT for each inner DFT ---------------------------------
 
-// -------------------------------- Parallel 2D FFT ---------------------------------
+
+void inner_parallel_dft2D(TwoDCArray & data, IArray dimensions, int num_threads){
+
+    int nb_rows = data.size();
+    int nb_cols = data[0].size();
+    
+    // fft per row
+
+    for (int i = 0; i < nb_rows; ++i) {
+        parallel_dft(data[i], dimensions, num_threads);
+    }
+
+    // transpose the matrix 
+    for (int j = 0; j < nb_cols; ++j) {
+        CArray column(nb_rows);
+        for (int i = 0; i < nb_rows; ++i) {
+            column[i] = data[i][j];
+        }
+
+        parallel_dft(column, dimensions, num_threads);
+
+        for (int i = 0; i < nb_rows; ++i) {
+            data[i][j] = column[i];
+        }
+    }
+}
+
+
+
+// -------------------------- Parallel 2D FFT for each row / column ---------------------------------
 
 
 void rows_worker_dft2D(TwoDCArray &data, int start_index, int end_index){
@@ -370,7 +400,7 @@ void cols_worker_dft2D(TwoDCArray &data, int start_index, int end_index){
 }
 
 
-void parallel_fft2D(TwoDCArray & data, int num_threads){
+void parallel_dft2D(TwoDCArray & data, int num_threads){
 
     int nb_rows = data.size();
     int nb_cols = data[0].size();

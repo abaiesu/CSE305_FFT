@@ -28,10 +28,6 @@ CArray test_1D_fft_diff_num_threads(int M, int p, bool print){
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
 
-        if (print){
-
-        }
-
         durations[th-1] = elapsed.count();
 
         printf("#threads = %d, duration = %f\n\n", th, elapsed.count());
@@ -87,38 +83,95 @@ void test_fft_speed(int M, int p, bool print){
 }
 
 
-void test_perf_2D_fft(){
+void plotter_fft_speed(bool print, DArray durations_par,  DArray durations_ser){
 
-    for(int p = 5; p <= 10; p++){
+    int M = 4;
+    for (int i = 0; i <= 12; i++){
 
-        int N = pow(2, p);
-        printf("N = %d\n", N);
+        int p = 4 + i;
+        ull N = pow(M, p); 
+
+        if(print){
+            printf("N = %llu\n", N);
+        }
+
+        IArray dimensions (p, M);
+
+        CArray x = gen_temp(N);
+
         int num_threads = 20;
-        TwoDCArray matrix_ser = generate_random_2d_array(N, N, 0, 100);
-        TwoDCArray matrix_par = generate_random_2d_array(N, N, 0, 100);
-
 
         // Timing sequential FFT
-        auto start_sequ = std::chrono::high_resolution_clock::now();
-        serial_dft2D(matrix_ser);
-        auto end_sequ = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed_sequ = end_sequ - start_sequ;
+        auto start = std::chrono::high_resolution_clock::now();
+        serial_dft(x);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_ser = end - start;
 
-        // Timing parallel FFT
-        auto start_par = std::chrono::high_resolution_clock::now();
-        parallel_fft2D(matrix_par, num_threads);
-        auto end_par = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed_par = end_par - start_par;
+        if (print){
+            printf("SERIAL : %f sec\n", elapsed_ser.count());
+        }
+        
+        // Timing sequential FFT
+        start = std::chrono::high_resolution_clock::now();
+        parallel_dft(x, dimensions, num_threads);
+        end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_par = end - start;
 
-        std::cout << "Serial 2D FFT time: " << elapsed_sequ.count() << " seconds" << std::endl;
-        std::cout << "Parallel 2D FFT time: " << elapsed_par.count() << " seconds" << std::endl;
+        if (print){
+            printf("PARALLEL : %f sec\n", elapsed_par.count());
+            printf("Ratio serial/parallel : %f\n", elapsed_ser.count()/elapsed_par.count());
+            printf("\n");
+        }
 
-        double speedup = elapsed_sequ.count()/elapsed_par.count();
-        std::cout << "Speedup: " << speedup << " seconds" << std::endl;
+        
 
-        printf("\n");
+        durations_ser[i] = elapsed_ser.count();
+        durations_par[i] = elapsed_par.count();
 
     }
+       
+}
+
+
+void test_perf_2D_fft(int M, int p){
+
+    //for(int p = 5; p <= 10; p++){
+
+    IArray dimensions (p, M);
+    ull N = pow(M, p);
+    printf("N = %d\n", N);
+    int num_threads = 20;
+    TwoDCArray matrix_ser = generate_random_2d_array(N, N, 0, 100);
+    TwoDCArray matrix_par1 = generate_random_2d_array(N, N, 0, 100);
+    TwoDCArray matrix_par2 = generate_random_2d_array(N, N, 0, 100);
+
+
+    // Timing sequential FFT
+    auto start_sequ = std::chrono::high_resolution_clock::now();
+    serial_dft2D(matrix_ser);
+    auto end_sequ = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_sequ = end_sequ - start_sequ;
+
+    // Timing parallel FFT
+    auto start_par = std::chrono::high_resolution_clock::now();
+    parallel_dft2D(matrix_par1, num_threads);
+    auto end_par = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_par1 = end_par - start_par;
+
+    /*start_par = std::chrono::high_resolution_clock::now();
+    inner_parallel_dft2D(matrix_par2, dimensions, num_threads);
+    end_par = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_par2 = end_par - start_par;*/
+
+    std::cout << "Serial 2D FFT time: " << elapsed_sequ.count() << " seconds" << std::endl;
+    std::cout << "Outer parallel 2D FFT time: " << elapsed_par1.count() << " seconds" << std::endl;
+    //std::cout << "Inner parallel 2D FFT time: " << elapsed_par2.count() << " seconds" << std::endl;
+
+
+        //double speedup = elapsed_sequ.count()/elapsed_par.count();
+        //std::cout << "Speedup: " << speedup << " seconds" << std::endl;
+
+        //printf("\n");
 
 }
 
@@ -263,6 +316,10 @@ int main(int argc, char* argv[]) {
 
     int test_number = std::atoi(argv[1]);
 
+    DArray durs_ser(13);
+    DArray durs_par(13);
+    std::string filename;
+
     switch (test_number) {
         case 0:
             if (argc != 5) {
@@ -279,7 +336,7 @@ int main(int argc, char* argv[]) {
 
         case 1:
             if (argc != 5) {
-                std::cerr << "Usage: " << argv[0] << " 1 <M> <p> <print>\n";
+                std::cerr << "Usage: " << argv[0] << " 0 <M> <p> <print>\n";
                 return 1;
             }
             {
@@ -291,11 +348,15 @@ int main(int argc, char* argv[]) {
             break;
 
         case 2:
-            if (argc != 2) {
-                std::cerr << "Usage: " << argv[0] << " 2\n";
+            if (argc != 4) {
+                std::cerr << "Usage: " << argv[0] << " 2 <M> <p> \n";
                 return 1;
             }
-            test_perf_2D_fft();
+            {
+                int M = std::atoi(argv[2]);
+                int p = std::atoi(argv[3]);
+                test_perf_2D_fft(M, p);
+            }
             break;
 
         case 3:
@@ -324,6 +385,14 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             test_dct();
+            break;
+
+        case 6: //not allowed for demo
+            plotter_fft_speed(true, durs_par, durs_ser);
+            filename = "durs_par.txt";
+            save2txt(durs_par, filename);
+            filename = "durs_ser.txt";
+            save2txt(durs_ser, filename);
             break;
 
         default:

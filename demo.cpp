@@ -10,7 +10,7 @@ void cs_demo(){
     int p = 5;
     ull N = pow(M, p);
     IArray dimensions (p, M);
-    int m = N/10;
+    int m = N*0.1;
     printf("Signal length N = %lld, measurment size m = %d\n", N, m);
 
     std::string filename;
