@@ -27,9 +27,13 @@ CSE305 final project : parallel FFT
 
 ## 7. `dct_gpu.cu`
 
-- **Description:** CUDA implementation a partial parallelozation of the DCT on the GPU + speed tests
+- **Description:** CUDA implementation a partial parallelization of the DCT on the GPU + speed tests
+
+## 8. `dft_gpu.cu`
+
+- **Description:** Attempt to parallel DFT implemented in CUDA
 
 
-## 7. `helpers.cpp`
+## 9. `helpers.cpp`
 
-- **Description:** Periodic signal generation, files reading and writing, random matrix generation, serial and parallel matrix-vector multiplication, equality checks between 2 matrices, equality checks between 2 vectors equal 
+- **Description:** Periodic signal generation, files reading and writing, random matrix generation, serial and parallel matrix-vector multiplication, equality checks between 2 matrices, equality checks between 2 vectors equal, sparsification 
