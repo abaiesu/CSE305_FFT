@@ -13,9 +13,9 @@ CSE305 final project : parallel FFT
 
 - **Description:** Serial and parrallel OMP
 
-## 4. `CS_demo.cpp`
+## 4. `demo.cpp`
 
-- **Description:** Implementation of a CS procedure for a generic signal (undersampling + recovery) + classic DFT sparsification
+- **Description:** Implementation of a CS procedure for a generic signal (undersampling + recovery) and classic DFT sparsification
 
 ## 5. `perf_test.cpp`
 
